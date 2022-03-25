@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothDevice
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 
@@ -18,12 +19,15 @@ class MainActivity : AppCompatActivity() {
         private const val mTag = "BLECOM_LOG"
         private const val BLUETOOTH_PERMISSION_CODE = 101
     }
-
+    lateinit var lbltext: TextView
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        lbltext = findViewById(R.id.lbltext01)
         if (checkPermission(Manifest.permission.BLUETOOTH_CONNECT, BLUETOOTH_PERMISSION_CODE)){
             startTheApp()
+        }else{
+            lbltext.text = getString(R.string.no_permission)
         }
     }
 
@@ -31,9 +35,12 @@ class MainActivity : AppCompatActivity() {
     private fun startTheApp(){
         val mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         val pairedDevices: Collection<BluetoothDevice> = mBluetoothAdapter.bondedDevices
+        var strDeviceList = ""
         for (device in pairedDevices) {
-            Log.d(mTag, "Device name: [${device.name}]  MAC: [${device.address}]")
+            strDeviceList += "Name: [${device.name}]  MAC: [${device.address}]\n"
+            Log.d(mTag, "Name: [${device.name}]  MAC: [${device.address}]")
         }
+        lbltext.text = strDeviceList
     }
 
     // Function to check and request permission.
