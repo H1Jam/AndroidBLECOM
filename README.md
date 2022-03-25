@@ -1,3 +1,3 @@
 # AndroidBLECOM (WIP)
-An android library for Bluetooth serial communication. 
-*Work in progress
+An android library for Bluetooth serial communication.
+* Work in progress
