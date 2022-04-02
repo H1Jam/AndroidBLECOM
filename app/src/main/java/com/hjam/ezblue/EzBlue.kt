@@ -76,40 +76,20 @@ object EzBlue {
             // try to connect to the BluetoothSocket.
             try {
                 Log.d(mTag, "Connect BT socket")
-                // This is a blocking call and will only return on a
-                // successful connection or an exception
                 mmSocket!!.connect()
             } catch (e: IOException) {
                 Log.d(mTag, e.message.toString())
+                passFailed()
                 cancel()
-                Log.d(mTag, "Fallback attempt to create RfComm socket")
-                val sockFallback: BluetoothSocket
-                val clazz: Class<*> = mmSocket!!.remoteDevice.javaClass
-                val paramTypes = arrayOf<Class<*>>(Integer.TYPE)
-                try {
-                    val m = clazz.getMethod("createRfcommSocket", *paramTypes)
-                    val params = arrayOf<Any>(1)
-                    sockFallback = m.invoke(mmSocket!!.remoteDevice, *params) as BluetoothSocket
-                    mmSocket = sockFallback
-                    logSocketUuids(mmSocket!!, "Fallback socket")
-
-                    // connect fallback socket
-                    mmSocket!!.connect()
-                } catch (e2: Exception) {
-                    e2.printStackTrace()
-                    Log.e(mTag, e.message.toString())
-                    passFailed()
-                    return
-                }
+            } catch (e2: Exception) {
+                e2.printStackTrace()
+                Log.e(mTag, e2.message.toString())
+                passFailed()
+                return
             }
-
-            // Reset the BtConnectThread because we're done
-            // synchronized(this@BtCommService) { mBtConnectThread = null }
-
             // Start the connected thread
             Log.d(mTag, "Connected BT socket")
             connected(mmSocket, mmDevice, mSocketType)
-
         }
 
         private fun connected(
@@ -177,7 +157,7 @@ object EzBlue {
             yield()
         }
 
-        private fun passFailed(){
+        private fun passFailed() {
             Handler(Looper.getMainLooper()).post {
                 dataCallback.connectionFailed()
             }
