@@ -81,6 +81,7 @@ object EzBlue {
                 Log.d(mTag, e.message.toString())
                 passFailed()
                 cancel()
+                return
             } catch (e2: Exception) {
                 e2.printStackTrace()
                 Log.e(mTag, e2.message.toString())
