@@ -1,4 +1,4 @@
-package com.hjam.blecom
+package com.hjam.ezblue
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

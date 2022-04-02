@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">BLECOM</string>
     <string name="no_permission">No Permission!</string>
+    <string name="connected">Connected</string>
 </resources>

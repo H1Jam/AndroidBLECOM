@@ -1,4 +1,4 @@
-package com.hjam.blecom
+package com.hjam.ezblue
 
 import org.junit.Test
 
