@@ -13,7 +13,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 
-
+//Todo: get the BtConnectThread from the EzBlue singleton object instance.
 class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
     companion object {
         private const val mTag = "BLECOM_LOG"

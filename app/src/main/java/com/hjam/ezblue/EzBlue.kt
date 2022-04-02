@@ -146,9 +146,10 @@ object EzBlue {
         //  @Synchronized
         fun write(buffer: ByteArray) {
             //  Log.d (mTag, "data write in ${Thread.currentThread().name}:${Thread.currentThread().id}")
-            if (mmOutStream != null) {
-                mmOutStream?.write(buffer)
+            if (mmSocket?.isConnected == true && mmOutStream != null){
+                    mmOutStream?.write(buffer)
             }
+
         }
 
         private fun passByte(input: Int) {
