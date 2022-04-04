@@ -13,17 +13,16 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 
-//Todo: get the BtConnectThread from the EzBlue singleton object instance.
+//Todo: separate packages and add more documents.
 class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
     companion object {
         private const val mTag = "BLECOM_LOG"
         private const val BLUETOOTH_PERMISSION_CODE = 101
     }
 
-    private lateinit var mBtConnectThread: EzBlue.BtConnectThread
+
     lateinit var mLbltext: TextView
     lateinit var mBtnSend: Button
-    var mStr: String? = ""
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -48,22 +47,24 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
             Log.d(mTag, "Name: [${device.name}]  MAC: [${device.address}]")
         }
         if (mmDevice != null) {
-            mBtConnectThread = EzBlue.BtConnectThread(this)
-            mBtConnectThread.init(mmDevice, true)
-            mBtConnectThread.start()
+            EzBlue.init (mmDevice, true,this)
+            EzBlue.start()
         }
         setListeners()
     }
 
-    var counterd: Int = 0
+    var mCounter: Int = 0
     private fun setListeners() {
         mBtnSend.setOnClickListener {
-            counterd++
-            if (counterd > 255) {
-                counterd = 1
+            mCounter++
+            if (mCounter > 255) {
+                mCounter = 1
             }
-            byts[0] = counterd.toByte()
-            mBtConnectThread.write(byts)
+            // a byte array showcase:
+            byts[0] = mCounter.toByte()
+            EzBlue.write(byts)
+            // or just use the above line for single byte transfer:
+            //EzBlue.write(counterd)
         }
     }
 
@@ -83,7 +84,7 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
     }
 
     override fun onDestroy() {
-        mBtConnectThread.mEnable = false
+        EzBlue.stop()
         super.onDestroy()
     }
 
@@ -100,8 +101,8 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
         override fun run() {
             currentThread().name = "Test1Thread"
             repeat(250000) {
-                dataCallback.dataRec(it)
-                sleep(0, 10)
+               // dataCallback.dataRec(it)
+                sleep(2000)
                 yield()
             }
         }

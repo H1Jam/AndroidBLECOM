@@ -13,12 +13,57 @@ import java.util.*
 
 object EzBlue {
 
-    private const val mTag = "BLECOM_LOG"
+    private const val mTag = "EzBlue"
+    private lateinit var mBtConnectThread: BtConnectThread
 
     interface BlueCallback {
         fun dataRec(inp: Int)
         fun connected()
         fun connectionFailed()
+    }
+
+    fun init(device: BluetoothDevice, secure: Boolean, dataCallback: BlueCallback):Boolean{
+        if (this::mBtConnectThread.isInitialized){
+            mBtConnectThread.mEnable = false
+        }
+        mBtConnectThread = BtConnectThread(dataCallback)
+       return mBtConnectThread.init(device, secure)
+    }
+
+    fun start():Boolean{
+        if (!this::mBtConnectThread.isInitialized){
+            Log.e(mTag, "EzBlue hasn't been initialized!")
+            return false
+        }
+        if (!mBtConnectThread.mLastInitSuccesses){
+            Log.e(mTag, "EzBlue hasn't been properly initialized!")
+            return false
+        }
+        Log.d(mTag, "EzBlue Starts!")
+        mBtConnectThread.start()
+        return false
+    }
+    fun stop(){
+        if (this::mBtConnectThread.isInitialized){
+            mBtConnectThread.mEnable = false
+            Log.e(mTag, "EzBlue stopped!")
+            return
+        }
+        Log.e(mTag, "Failed to Stop! EzBlue hasn't been initialized!")
+    }
+
+    @Synchronized
+    fun write(buffer: ByteArray){
+        if (this::mBtConnectThread.isInitialized){
+            mBtConnectThread.write(buffer)
+        }
+    }
+
+    @Synchronized
+    fun write(data : Int){
+        if (this::mBtConnectThread.isInitialized){
+            mBtConnectThread.write(data)
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -27,8 +72,11 @@ object EzBlue {
         var mmSocket: BluetoothSocket? = null
         var mSocketType: String? = null
         var mEnable = true
+        var mLastInitSuccesses = false
+        var mIsRunning = false
         private var mmOutStream: OutputStream? = null
-        fun init(device: BluetoothDevice, secure: Boolean) {
+        fun init(device: BluetoothDevice, secure: Boolean): Boolean {
+            mLastInitSuccesses = false
             mmDevice = device
             var tmp: BluetoothSocket? = null
             mSocketType = if (secure) "Secure" else "Insecure"
@@ -46,10 +94,13 @@ object EzBlue {
                 }
             } catch (e: IOException) {
                 e.printStackTrace()
+                return false
             }
             mmSocket = tmp
             logSocketUuids(mmSocket!!, "BT socket")
             Log.d(mTag, "Socket Type: " + mSocketType + "create() failed")
+            mLastInitSuccesses = true
+            return true
         }
 
         /**
@@ -117,8 +168,9 @@ object EzBlue {
             mmOutStream = tmpOut
             sleep(100)
             if (mmInStream != null) {
-                Log.d(mTag, "Reading to BT socket!")
+                Log.d(mTag, "Reading from BT socket!")
                 var chr: Int
+                mIsRunning = true
                 while (mEnable) {
                     if (mmInStream.available() > 0) {
                         if (mmInStream.read().also { chr = it } > 0) {
@@ -132,6 +184,7 @@ object EzBlue {
                         sleep(0, 100)
                     }
                 }
+                mIsRunning = false
             }
             try {
                 Log.d(mTag, "Closing BT socket")
@@ -146,8 +199,16 @@ object EzBlue {
         //  @Synchronized
         fun write(buffer: ByteArray) {
             //  Log.d (mTag, "data write in ${Thread.currentThread().name}:${Thread.currentThread().id}")
-            if (mmSocket?.isConnected == true && mmOutStream != null){
-                    mmOutStream?.write(buffer)
+            if (mmSocket?.isConnected == true && mmOutStream != null) {
+                mmOutStream?.write(buffer)
+            }
+
+        }
+
+        fun write(data: Int) {
+            //  Log.d (mTag, "data write in ${Thread.currentThread().name}:${Thread.currentThread().id}")
+            if (mmSocket?.isConnected == true && mmOutStream != null) {
+                mmOutStream?.write(data)
             }
 
         }
@@ -178,6 +239,5 @@ object EzBlue {
         }
 
     }
-
 
 }
