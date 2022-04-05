@@ -119,7 +119,9 @@ object EzBlue {
         }
 
         override fun run() {
-            Log.d(mTag, "BEGIN mBtConnectThread SocketType:$mSocketType")
+            currentThread().name = "BtConnectThread"
+            Log.d(mTag, "BEGIN mBtConnectThread SocketType:$mSocketType " +
+                    "on ${currentThread().name} ID:${currentThread().id}")
             // try to connect to the BluetoothSocket.
             try {
                 Log.d(mTag, "Connect BT socket")
