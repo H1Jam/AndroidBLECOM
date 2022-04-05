@@ -1,6 +1,7 @@
 package com.hjam.ezblue
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
 import android.os.Handler
@@ -19,23 +20,29 @@ object EzBlue {
     interface BlueCallback {
         fun dataRec(inp: Int)
         fun connected()
-        fun connectionFailed()
+        fun disconnected()
     }
 
-    fun init(device: BluetoothDevice, secure: Boolean, dataCallback: BlueCallback):Boolean{
-        if (this::mBtConnectThread.isInitialized){
+    @SuppressLint("MissingPermission")
+    fun getBondedDevices():Collection<BluetoothDevice>{
+        val mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        return mBluetoothAdapter.bondedDevices
+    }
+
+    fun init(device: BluetoothDevice, secure: Boolean, dataCallback: BlueCallback): Boolean {
+        if (this::mBtConnectThread.isInitialized) {
             mBtConnectThread.mEnable = false
         }
         mBtConnectThread = BtConnectThread(dataCallback)
-       return mBtConnectThread.init(device, secure)
+        return mBtConnectThread.init(device, secure)
     }
 
-    fun start():Boolean{
-        if (!this::mBtConnectThread.isInitialized){
+    fun start(): Boolean {
+        if (!this::mBtConnectThread.isInitialized) {
             Log.e(mTag, "EzBlue hasn't been initialized!")
             return false
         }
-        if (!mBtConnectThread.mLastInitSuccesses){
+        if (!mBtConnectThread.mLastInitSuccesses) {
             Log.e(mTag, "EzBlue hasn't been properly initialized!")
             return false
         }
@@ -43,8 +50,9 @@ object EzBlue {
         mBtConnectThread.start()
         return false
     }
-    fun stop(){
-        if (this::mBtConnectThread.isInitialized){
+
+    fun stop() {
+        if (this::mBtConnectThread.isInitialized) {
             mBtConnectThread.mEnable = false
             Log.e(mTag, "EzBlue stopped!")
             return
@@ -52,16 +60,26 @@ object EzBlue {
         Log.e(mTag, "Failed to Stop! EzBlue hasn't been initialized!")
     }
 
+    /**
+     * A method to write an array of byte to output stream. Good for sending an entire data frame.
+     * @param buffer : ByteArray
+     */
     @Synchronized
-    fun write(buffer: ByteArray){
-        if (this::mBtConnectThread.isInitialized){
+    fun write(buffer: ByteArray) {
+        if (this::mBtConnectThread.isInitialized) {
             mBtConnectThread.write(buffer)
         }
     }
 
+    /**
+     * A method to write a single byte to output stream.
+     * use this method when you just want to send a single byte since if trying to send a frame
+     * another thread may interrupt and ruin the stream. Thus, try to use @write(buffer) method.
+     * @param data : Integer (The first byte will be transferred [0-255])
+     */
     @Synchronized
-    fun write(data : Int){
-        if (this::mBtConnectThread.isInitialized){
+    fun write(data: Int) {
+        if (this::mBtConnectThread.isInitialized) {
             mBtConnectThread.write(data)
         }
     }
@@ -108,13 +126,13 @@ object EzBlue {
                 mmSocket!!.connect()
             } catch (e: IOException) {
                 Log.d(mTag, e.message.toString())
-                passFailed()
+                passDisconnected()
                 cancel()
                 return
             } catch (e2: Exception) {
                 e2.printStackTrace()
                 Log.e(mTag, e2.message.toString())
-                passFailed()
+                passDisconnected()
                 return
             }
             // Start the connected thread
@@ -126,6 +144,7 @@ object EzBlue {
             socket: BluetoothSocket?,
             socketType: String?
         ) {
+            passConnected()
             Log.d(mTag, "connected, Socket Type:$socketType")
             // Cancel the thread that completed the connection
             Log.d(mTag, "Get the BluetoothSocket input and output streams: $socketType")
@@ -162,6 +181,7 @@ object EzBlue {
                     }
                 }
                 mIsRunning = false
+                passDisconnected()
             }
             try {
                 Log.d(mTag, "Closing BT socket")
@@ -173,11 +193,15 @@ object EzBlue {
             Log.d(mTag, "BT socket Finished!")
         }
 
-        //  @Synchronized
         fun write(buffer: ByteArray) {
             //  Log.d (mTag, "data write in ${Thread.currentThread().name}:${Thread.currentThread().id}")
             if (mmSocket?.isConnected == true && mmOutStream != null) {
-                mmOutStream?.write(buffer)
+                try {
+                    mmOutStream?.write(buffer)
+                } catch (e: Exception) {
+                    Log.e(mTag,e.message.toString())
+                    mEnable = false
+                }
             }
 
         }
@@ -185,7 +209,12 @@ object EzBlue {
         fun write(data: Int) {
             //  Log.d (mTag, "data write in ${Thread.currentThread().name}:${Thread.currentThread().id}")
             if (mmSocket?.isConnected == true && mmOutStream != null) {
-                mmOutStream?.write(data)
+                try {
+                    mmOutStream?.write(data)
+                } catch (e: Exception) {
+                    Log.e(mTag,e.message.toString())
+                    mEnable = false
+                }
             }
 
         }
@@ -197,9 +226,16 @@ object EzBlue {
             yield()
         }
 
-        private fun passFailed() {
+        private fun passConnected() {
             Handler(Looper.getMainLooper()).post {
-                dataCallback.connectionFailed()
+                dataCallback.connected()
+            }
+            yield()
+        }
+
+        private fun passDisconnected() {
+            Handler(Looper.getMainLooper()).post {
+                dataCallback.disconnected()
             }
             yield()
         }

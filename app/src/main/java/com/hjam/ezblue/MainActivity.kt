@@ -2,7 +2,6 @@ package com.hjam.ezblue
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -15,19 +14,24 @@ import androidx.core.app.ActivityCompat
 
 //Todo: separate packages and add more documents.
 class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
+
     companion object {
         private const val mTag = "BLECOM_LOG"
         private const val BLUETOOTH_PERMISSION_CODE = 101
     }
 
+    private lateinit var mLbltext: TextView
+    private lateinit var mBtnSend: Button
+    private lateinit var mBtnConnect: Button
+    private lateinit var mBtnDisconnect: Button
 
-    lateinit var mLbltext: TextView
-    lateinit var mBtnSend: Button
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         mLbltext = findViewById(R.id.lbl_text)
         mBtnSend = findViewById(R.id.btn_send)
+        mBtnConnect = findViewById(R.id.btn_connect)
+        mBtnDisconnect = findViewById(R.id.btn_disconnect)
         if (checkPermission(Manifest.permission.BLUETOOTH_CONNECT, BLUETOOTH_PERMISSION_CODE)) {
             startTheApp()
         } else {
@@ -35,25 +39,28 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
         }
     }
 
-    @SuppressLint("MissingPermission")
     private fun startTheApp() {
-        val mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        val pairedDevices: Collection<BluetoothDevice> = mBluetoothAdapter.bondedDevices
+        setListeners()
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun connectToDev(){
         var mmDevice: BluetoothDevice? = null
-        for (device in pairedDevices) {
+        for (device in EzBlue.getBondedDevices()) {
             if (device.name.equals("ESP32testB")) {
                 mmDevice = device
             }
             Log.d(mTag, "Name: [${device.name}]  MAC: [${device.address}]")
         }
         if (mmDevice != null) {
-            EzBlue.init (mmDevice, true,this)
+            EzBlue.init(mmDevice, true, this)
             EzBlue.start()
         }
-        setListeners()
     }
 
     var mCounter: Int = 0
+    val byts: ByteArray = ByteArray(1)
+
     private fun setListeners() {
         mBtnSend.setOnClickListener {
             mCounter++
@@ -66,9 +73,17 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
             // or just use the above line for single byte transfer:
             //EzBlue.write(counterd)
         }
+
+        mBtnConnect.setOnClickListener {
+            connectToDev()
+        }
+
+        mBtnDisconnect.setOnClickListener {
+            EzBlue.stop()
+        }
     }
 
-    val byts: ByteArray = ByteArray(1)
+
     override fun dataRec(inp: Int) {
         // byts[0] =inp.toByte()
         // mBtConnectThread.write(byts)
@@ -76,10 +91,12 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
     }
 
     override fun connected() {
+        Log.d(mTag, "connected!")
         setText("Connected!")
     }
 
-    override fun connectionFailed() {
+    override fun disconnected() {
+        Log.d(mTag, "connectionFailed!")
         setText("Disconnected!")
     }
 
@@ -101,7 +118,7 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
         override fun run() {
             currentThread().name = "Test1Thread"
             repeat(250000) {
-               // dataCallback.dataRec(it)
+                // dataCallback.dataRec(it)
                 sleep(2000)
                 yield()
             }
