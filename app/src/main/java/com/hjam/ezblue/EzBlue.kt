@@ -68,7 +68,6 @@ object EzBlue {
 
     @SuppressLint("MissingPermission")
     class BtConnectThread(private var dataCallback: BlueCallback) : Thread() {
-        var mmDevice: BluetoothDevice? = null
         var mmSocket: BluetoothSocket? = null
         var mSocketType: String? = null
         var mEnable = true
@@ -77,7 +76,6 @@ object EzBlue {
         private var mmOutStream: OutputStream? = null
         fun init(device: BluetoothDevice, secure: Boolean): Boolean {
             mLastInitSuccesses = false
-            mmDevice = device
             var tmp: BluetoothSocket? = null
             mSocketType = if (secure) "Secure" else "Insecure"
 
@@ -97,29 +95,9 @@ object EzBlue {
                 return false
             }
             mmSocket = tmp
-            logSocketUuids(mmSocket!!, "BT socket")
             Log.d(mTag, "Socket Type: " + mSocketType + "create() failed")
             mLastInitSuccesses = true
             return true
-        }
-
-        /**
-         * Log supported UUIDs of the specified BluetoothSocket
-         * @param socket Socket to log
-         * @param msg Message to prepend the UUIDs
-         */
-        private fun logSocketUuids(socket: BluetoothSocket, msg: String) {
-            val message = StringBuilder(msg)
-            message.append(" - UUIDs:")
-            val uuids = socket.remoteDevice.uuids
-            if (uuids != null) {
-                for (uuid in uuids) {
-                    message.append(uuid.uuid.toString()).append(",")
-                }
-            } else {
-                message.append("NONE (Invalid BT implementation)")
-            }
-            Log.d(mTag, "logSocketUuids: [$message]")
         }
 
         override fun run() {
@@ -141,12 +119,11 @@ object EzBlue {
             }
             // Start the connected thread
             Log.d(mTag, "Connected BT socket")
-            connected(mmSocket, mmDevice, mSocketType)
+            connected(mmSocket, mSocketType)
         }
 
         private fun connected(
             socket: BluetoothSocket?,
-            device: BluetoothDevice?,
             socketType: String?
         ) {
             Log.d(mTag, "connected, Socket Type:$socketType")
