@@ -14,7 +14,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BLECOM">
         <activity
-            android:name="com.hjam.ezblue.MainActivity"
+            android:name="com.hjam.ezblue.sampleApp.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

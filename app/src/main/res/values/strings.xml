@@ -2,4 +2,7 @@
     <string name="app_name">BLECOM</string>
     <string name="no_permission">No Permission!</string>
     <string name="connected">Connected</string>
+    <string name="disconnect">Disconnect</string>
+    <string name="connect">Connect</string>
+    <string name="send">Send</string>
 </resources>

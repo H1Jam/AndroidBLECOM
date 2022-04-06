@@ -1,4 +1,4 @@
-package com.hjam.ezblue
+package sampleApp
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -11,8 +11,11 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.hjam.ezblue.EzBlue
+import com.hjam.ezblue.R
 
-//Todo: separate packages and add more documents.
+//Todo: Add Unit tests!
+//Todo: Convert it to a submodule!
 class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
 
     companion object {
