@@ -1,4 +1,4 @@
-package sampleApp
+package com.hjam.ezbluesampleapp
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -11,15 +11,15 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import com.hjam.ezblue.EzBlue
-import com.hjam.ezblue.R
 
+
+//Todo: Convert ezBlue to a module!
 //Todo: Add Unit tests!
 //Todo: Convert it to a submodule!
 class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
 
     companion object {
-        private const val mTag = "BLECOM_LOG"
+        private const val mTag = "EZBlueSample_LOG"
         private const val BLUETOOTH_PERMISSION_CODE = 101
     }
 
@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
     @SuppressLint("MissingPermission")
     private fun connectToDev(){
         var mmDevice: BluetoothDevice? = null
-        for (device in EzBlue.getBondedDevices()) {
+        for (device in  EzBlue.getBondedDevices()) {
             if (device.name.equals("ESP32testB")) {
                 mmDevice = device
             }

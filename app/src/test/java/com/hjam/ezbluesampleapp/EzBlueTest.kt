@@ -1,4 +1,4 @@
-package com.hjam.ezblue
+package com.hjam.ezbluesampleapp
 
 import org.junit.Assert.*
 import org.junit.Test
