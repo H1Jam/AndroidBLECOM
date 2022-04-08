@@ -11,9 +11,9 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.hjam.ezbluelib.EzBlue
 
-
-//Todo: Convert ezBlue to a module!
+//Todo: Design a device list dialog.
 //Todo: Add Unit tests!
 //Todo: Convert it to a submodule!
 class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {

@@ -1,4 +1,4 @@
-package com.hjam.ezbluesampleapp
+package com.hjam.ezbluelib
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
@@ -94,7 +94,7 @@ object EzBlue {
         private var mmOutStream: OutputStream? = null
         fun init(device: BluetoothDevice, secure: Boolean): Boolean {
             mLastInitSuccesses = false
-            var tmp: BluetoothSocket? = null
+            var tmp: BluetoothSocket?
             mSocketType = if (secure) "Secure" else "Insecure"
 
             // SPP Devices
@@ -158,7 +158,7 @@ object EzBlue {
             // Get the BluetoothSocket input and output streams
             try {
                 tmpIn = socket!!.inputStream
-                tmpOut = socket!!.outputStream
+                tmpOut = socket.outputStream
             } catch (e: IOException) {
                 Log.e(mTag, "temp sockets not created")
                 e.printStackTrace()
