@@ -1,0 +1,3 @@
+[submodule "EzBlueLib"]
+	path = EzBlueLib
+	url = https://github.com/H1Jam/EzBlueLib.git
