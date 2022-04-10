@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.Handler
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
@@ -35,16 +34,14 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
         mBtnSend = findViewById(R.id.btn_send)
         mBtnConnect = findViewById(R.id.btn_connect)
         mBtnDisconnect = findViewById(R.id.btn_disconnect)
+        mBtnDisconnect.isEnabled = false
+        mBtnSend.isEnabled = false
         if (checkPermission(Manifest.permission.BLUETOOTH_CONNECT, BLUETOOTH_PERMISSION_CODE)) {
             startTheApp()
         } else {
+            mBtnConnect.isEnabled = false
             mLblText.text = getString(R.string.no_permission)
         }
-        Log.e(
-            mTag,
-            "thread:" + Thread.currentThread().name + ":" + Thread.currentThread().id.toString()
-        )
-
     }
 
     private fun startTheApp() {
@@ -76,12 +73,10 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
             // or just use the above line for single byte transfer:
             //EzBlue.write(counterd)
         }
-
+        mBtnConnect.isEnabled = true
         mBtnConnect.setOnClickListener {
             showDevList()
         }
-        mBtnDisconnect.isEnabled = false
-        mBtnSend.isEnabled = false
         mBtnDisconnect.setOnClickListener {
             EzBlue.stop()
         }
@@ -133,22 +128,6 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
         mBtnConnect.isEnabled = false
     }
 
-    class Test1(
-        private val tv: TextView,
-        private var mHandler: Handler,
-        private var dataCallback: EzBlue.BlueCallback
-    ) : Thread() {
-
-        override fun run() {
-            currentThread().name = "Test1Thread"
-            repeat(250000) {
-                // dataCallback.dataRec(it)
-                sleep(2000)
-                yield()
-            }
-        }
-    }
-
     // Function to check and request permission.
     private fun checkPermission(permission: String, requestCode: Int): Boolean {
         if (ActivityCompat.checkSelfPermission(
@@ -172,6 +151,7 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
         if (requestCode == BLUETOOTH_PERMISSION_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Log.d(mTag, "PERMISSION GRANTED")
+                startTheApp()
             } else {
                 Log.e(mTag, "Permission Denied!")
             }
