@@ -9,13 +9,13 @@ import android.os.Handler
 import android.util.Log
 import android.widget.Button
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.hjam.ezbluelib.EzBlue
 
-//Todo: Design a device list dialog.
 //Todo: Add Unit tests!
-//Todo: Convert it to a submodule!
+@SuppressLint("MissingPermission")
 class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
 
     companion object {
@@ -23,7 +23,7 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
         private const val BLUETOOTH_PERMISSION_CODE = 101
     }
 
-    private lateinit var mLbltext: TextView
+    private lateinit var mLblText: TextView
     private lateinit var mBtnSend: Button
     private lateinit var mBtnConnect: Button
     private lateinit var mBtnDisconnect: Button
@@ -31,38 +31,38 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        mLbltext = findViewById(R.id.lbl_text)
+        mLblText = findViewById(R.id.lbl_text)
         mBtnSend = findViewById(R.id.btn_send)
         mBtnConnect = findViewById(R.id.btn_connect)
         mBtnDisconnect = findViewById(R.id.btn_disconnect)
         if (checkPermission(Manifest.permission.BLUETOOTH_CONNECT, BLUETOOTH_PERMISSION_CODE)) {
             startTheApp()
         } else {
-            mLbltext.text = getString(R.string.no_permission)
+            mLblText.text = getString(R.string.no_permission)
         }
+        Log.e(
+            mTag,
+            "thread:" + Thread.currentThread().name + ":" + Thread.currentThread().id.toString()
+        )
+
     }
 
     private fun startTheApp() {
         setListeners()
     }
 
-    @SuppressLint("MissingPermission")
-    private fun connectToDev(){
-        var mmDevice: BluetoothDevice? = null
-        for (device in  EzBlue.getBondedDevices()) {
-            if (device.name.equals("ESP32testB")) {
-                mmDevice = device
-            }
-            Log.d(mTag, "Name: [${device.name}]  MAC: [${device.address}]")
-        }
-        if (mmDevice != null) {
-            EzBlue.init(mmDevice, true, this)
-            EzBlue.start()
-        }
+    private fun showDevList() {
+        val mmDevList = EzBlue.getBondedDevices()
+        showDeviceListDialog(mmDevList.toTypedArray())
+    }
+
+    private fun connectToDev(dev: BluetoothDevice) {
+        EzBlue.init(dev, true, this)
+        EzBlue.start()
     }
 
     var mCounter: Int = 0
-    val byts: ByteArray = ByteArray(1)
+    private val mBytes: ByteArray = ByteArray(1)
 
     private fun setListeners() {
         mBtnSend.setOnClickListener {
@@ -71,36 +71,39 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
                 mCounter = 1
             }
             // a byte array showcase:
-            byts[0] = mCounter.toByte()
-            EzBlue.write(byts)
+            mBytes[0] = mCounter.toByte()
+            EzBlue.write(mBytes)
             // or just use the above line for single byte transfer:
             //EzBlue.write(counterd)
         }
 
         mBtnConnect.setOnClickListener {
-            connectToDev()
+            showDevList()
         }
-
+        mBtnDisconnect.isEnabled = false
+        mBtnSend.isEnabled = false
         mBtnDisconnect.setOnClickListener {
             EzBlue.stop()
         }
     }
 
-
     override fun dataRec(inp: Int) {
-        // byts[0] =inp.toByte()
-        // mBtConnectThread.write(byts)
-        mLbltext.text = inp.toString()
+        mLblText.text = inp.toString()
     }
 
     override fun connected() {
         Log.d(mTag, "connected!")
         setText("Connected!")
+        mBtnDisconnect.isEnabled = true
+        mBtnSend.isEnabled = true
     }
 
     override fun disconnected() {
         Log.d(mTag, "connectionFailed!")
         setText("Disconnected!")
+        mBtnConnect.isEnabled = true
+        mBtnDisconnect.isEnabled = false
+        mBtnSend.isEnabled = false
     }
 
     override fun onDestroy() {
@@ -109,7 +112,25 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
     }
 
     private fun setText(str: String) {
-        mLbltext.text = str
+        mLblText.text = str
+    }
+
+    private fun showDeviceListDialog(devices: Array<BluetoothDevice>) {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Choose an animal")
+        val mmListData: Array<String> = devices.map { it.name }.toTypedArray()
+        builder.setItems(mmListData) { _, which ->
+            connectToDevFromDialog(devices[which])
+        }
+        val dialog = builder.create()
+        dialog.show()
+    }
+
+    private fun connectToDevFromDialog(dev: BluetoothDevice) {
+        Log.e(mTag, dev.name + ":" + dev.address)
+        connectToDev(dev)
+        setText("Connecting...")
+        mBtnConnect.isEnabled = false
     }
 
     class Test1(

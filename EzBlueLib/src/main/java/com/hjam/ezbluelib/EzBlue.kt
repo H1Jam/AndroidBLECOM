@@ -12,6 +12,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.util.*
 
+@SuppressLint("MissingPermission")
 object EzBlue {
 
     private const val mTag = "EzBlue"
@@ -23,7 +24,6 @@ object EzBlue {
         fun disconnected()
     }
 
-    @SuppressLint("MissingPermission")
     fun getBondedDevices():Collection<BluetoothDevice>{
         val mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
         return mBluetoothAdapter.bondedDevices
@@ -84,7 +84,6 @@ object EzBlue {
         }
     }
 
-    @SuppressLint("MissingPermission")
     class BtConnectThread(private var dataCallback: BlueCallback) : Thread() {
         var mmSocket: BluetoothSocket? = null
         var mSocketType: String? = null
