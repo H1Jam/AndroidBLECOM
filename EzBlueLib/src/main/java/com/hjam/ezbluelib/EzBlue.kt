@@ -171,7 +171,7 @@ object EzBlue {
                 mIsRunning = true
                 while (mEnable) {
                     if (mmInStream.available() > 0) {
-                        if (mmInStream.read().also { chr = it } > 0) {
+                        if (mmInStream.read().also { chr = it } >= 0) {
                             passByte(chr)
                         } else {
                             Log.d(mTag, "End of the string")
