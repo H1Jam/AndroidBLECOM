@@ -39,7 +39,7 @@ The library has been published to JitPack. In order to add the dependency you ha
      ```javascript
      dependencies {
 		...
-		implementation 'com.github.H1Jam:EzBlueLib:1.0.4'
+		implementation 'com.github.H1Jam:EzBlueLib:1.0.5'
      }
      ```
 	 * Chose the latest version or the one that works for you.
