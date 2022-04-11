@@ -12,10 +12,11 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.hjam.ezbluelib.EzBlue
+import kotlin.collections.ArrayList
 
 //Todo: Add Unit tests!
 @SuppressLint("MissingPermission")
-class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
+class MainActivity : AppCompatActivity(), EzBlue.BlueCallback, EzBlue.BlueParser {
 
     companion object {
         private const val mTag = "EZBlueSample_LOG"
@@ -28,6 +29,7 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
     private lateinit var mBtnDisconnect: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         mLblText = findViewById(R.id.lbl_text)
@@ -54,11 +56,16 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
     }
 
     private fun connectToDev(dev: BluetoothDevice) {
-        EzBlue.init(dev, true, this)
+        // Use the first method to get each bytes in the `dataRec` callback in the main thread.
+        // EzBlue.init(dev, true, this)
+        // Use the second method to apply a custom parser. The custom parser runs on Ezblue thread
+        // thus you should not update UI in that callback.
+        EzBlue.init(dev, true, this, this)
         EzBlue.start()
     }
 
     var mCounter: Int = 0
+    var mInpCounter: Int = 0
     private val mBytes: ByteArray = ByteArray(1)
 
     private fun setListeners() {
@@ -82,11 +89,53 @@ class MainActivity : AppCompatActivity(), EzBlue.BlueCallback {
         }
     }
 
+    private val dataBuf: ArrayList<Byte> = arrayListOf()
+    private var dataBufOut: ArrayList<Byte> = arrayListOf()
+
+
+    /**
+     * A byte receive callback. When a byte appears in the stream this method will be invoked.
+     * The method runs on Bluetooth thread. Do not update UI here!
+     * @param inp: an Int from input stream.
+     * @return ArrayList<Byte> if the packed was parsed otherwise returns null.
+     */
+    override fun parseIt(inp: Int): ArrayList<Byte>? {
+        dataBuf.add(inp.toByte())
+        // if receive new line char, the packed was concluded. You may try 13 too.
+        return if (inp == 10) {
+            // We need to make a copy of the list otherwise the `clear()` method will  clear it
+            // before returning the list thus `bluePackReceived` will always get an empty array.
+            dataBufOut = dataBuf.toMutableList() as ArrayList<Byte>
+            dataBuf.clear()
+            dataBufOut
+        } else {
+            null
+        }
+    }
+
+    /**
+     * Packet receive callback. When your packed is ready this method will be invoked.
+     * The method runs on the UI thread. It is safe to update UI here.
+     * @param inp: an ArrayList containing the packed body parsed in the parseIt stage.
+     * @return void
+     */
+    override fun bluePackReceived(inp: ArrayList<Byte>?) {
+        if (inp != null) {
+            Log.d(mTag, "bluePackReceived data $inp , size= ${inp.size}")
+            val tmp = inp.map { it.toInt().toChar() }
+            setText(tmp.joinToString(separator = ""))
+        }
+    }
+
     override fun dataRec(inp: Int) {
-        mLblText.text = inp.toString()
+        mInpCounter++
+        if ((mInpCounter % 500) == 0) {
+            "$mInpCounter".also { mLblText.text = it }
+        }
     }
 
     override fun connected() {
+        mInpCounter = 0
         Log.d(mTag, "connected!")
         setText("Connected!")
         mBtnDisconnect.isEnabled = true

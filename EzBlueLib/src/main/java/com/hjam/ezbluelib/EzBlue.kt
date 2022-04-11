@@ -24,16 +24,41 @@ object EzBlue {
         fun disconnected()
     }
 
-    fun getBondedDevices():Collection<BluetoothDevice>{
+    interface BlueParser {
+        /**
+         * @parseIt A byte receive callback. When a byte appears in the stream this method will be invoked.
+         * The method runs on Bluetooth thread. Do not update UI here!
+         * @param inp: an Int from input stream.
+         * @return ArrayList<Byte> if the packed was parsed otherwise returns null.
+         */
+        fun parseIt(inp: Int): ArrayList<Byte>?
+
+        /**
+         * @bluePackReceived Packet receive callback. When your packed is ready this method will be invoked.
+         * The method runs on the UI thread. It is safe to update UI here.
+         * @param inp: an ArrayList containing the packed body parsed in the parseIt stage.
+         * @return void
+         */
+        fun bluePackReceived(inp: ArrayList<Byte>?)
+    }
+
+    fun getBondedDevices(): Collection<BluetoothDevice> {
         val mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
         return mBluetoothAdapter.bondedDevices
     }
 
     fun init(device: BluetoothDevice, secure: Boolean, dataCallback: BlueCallback): Boolean {
+        return init(device, secure, dataCallback, null)
+    }
+
+    fun init(
+        device: BluetoothDevice, secure: Boolean,
+        dataCallback: BlueCallback, parser: BlueParser?
+    ): Boolean {
         if (this::mBtConnectThread.isInitialized) {
             mBtConnectThread.mEnable = false
         }
-        mBtConnectThread = BtConnectThread(dataCallback)
+        mBtConnectThread = BtConnectThread(dataCallback, parser)
         return mBtConnectThread.init(device, secure)
     }
 
@@ -84,7 +109,10 @@ object EzBlue {
         }
     }
 
-    class BtConnectThread(private var dataCallback: BlueCallback) : Thread() {
+    class BtConnectThread(
+        private var dataCallback: BlueCallback,
+        private var blueParser: BlueParser?
+    ) : Thread() {
         var mmSocket: BluetoothSocket? = null
         var mSocketType: String? = null
         var mEnable = true
@@ -121,7 +149,8 @@ object EzBlue {
             currentThread().name = "BtConnectThread"
             Log.d(
                 mTag, "BEGIN mBtConnectThread SocketType:$mSocketType " +
-                    "on ${currentThread().name} ID:${currentThread().id}")
+                        "on ${currentThread().name} ID:${currentThread().id}"
+            )
             // try to connect to the BluetoothSocket.
             try {
                 Log.d(mTag, "Connect BT socket")
@@ -201,7 +230,7 @@ object EzBlue {
                 try {
                     mmOutStream?.write(buffer)
                 } catch (e: Exception) {
-                    Log.e(mTag,e.message.toString())
+                    Log.e(mTag, e.message.toString())
                     mEnable = false
                 }
             }
@@ -214,7 +243,7 @@ object EzBlue {
                 try {
                     mmOutStream?.write(data)
                 } catch (e: Exception) {
-                    Log.e(mTag,e.message.toString())
+                    Log.e(mTag, e.message.toString())
                     mEnable = false
                 }
             }
@@ -222,10 +251,19 @@ object EzBlue {
         }
 
         private fun passByte(input: Int) {
-            Handler(Looper.getMainLooper()).post {
-                dataCallback.dataRec(input)
+            if (blueParser == null) {
+                Handler(Looper.getMainLooper()).post {
+                    dataCallback.dataRec(input)
+                }
+                yield()
+            } else {
+                val result = blueParser?.parseIt(input)
+                if (result != null) {
+                    Handler(Looper.getMainLooper()).post {
+                        blueParser?.bluePackReceived(result)
+                    }
+                }
             }
-            yield()
         }
 
         private fun passConnected() {
