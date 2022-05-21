@@ -16,7 +16,7 @@ The library has been published to JitPack. In order to add the dependency you ha
 
 1. For gradle build tools < 7.x.x add this in your root build.gradle at the end of repositories:
 
-   ```javascript
+   ```groovy
    allprojects {
      repositories {
        ...
@@ -24,15 +24,17 @@ The library has been published to JitPack. In order to add the dependency you ha
      }
    }
    ```
-	As of the 7.X.X gradle build tools you have to do this instead:
+	As of the 7.X.X gradle build tools you have to add it in `settings.gradle`:
 	
-	```dependencyResolutionManagement {
+	```groovy
+	dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
 		repositories {
 			...
 			maven { url "https://jitpack.io" }
 		}
-	}```
+	}
+	```
 	
 2. Add the dependency
 
