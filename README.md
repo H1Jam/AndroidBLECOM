@@ -38,7 +38,7 @@ The library has been published to JitPack. In order to add the dependency you ha
 	
 2. Add the dependency
 
-     ```javascript
+     ```groovy
      dependencies {
 		...
 		implementation 'com.github.H1Jam:EzBlueLib:1.0.5'
