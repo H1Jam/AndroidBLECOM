@@ -14,7 +14,7 @@ See the [sample app](https://github.com/H1Jam/EzBlueLib/tree/main/app/src/main/j
 
 The library has been published to JitPack. In order to add the dependency you have to follow these steps:
 
-1. For gradle build tools < 7.x.x add this in your root build.gradle at the end of repositories:
+1. For gradle build tools < 7.x.x add this in your root `build.gradle` at the end of repositories:
 
    ```groovy
    allprojects {
